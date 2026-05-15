@@ -23,7 +23,7 @@ class Settings(BaseSettings):
     host: str = Field(default="0.0.0.0", description="Server bind address")
     port: int = Field(default=8000, description="Server port")
     cors_origins: list[str] = Field(
-        default=["http://localhost:3000", "http://localhost:5173"],
+        default=["*"],
         description="Allowed CORS origins"
     )
 
