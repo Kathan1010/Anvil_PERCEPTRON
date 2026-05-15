@@ -26,7 +26,7 @@ from backend.monitoring.alert_simulator import get_demo_alert, list_scenarios
 
 # ── Active pipelines (for approval flow) ──
 _pending_approvals: dict[str, SOCState] = {}
-_pipeline_lock = asyncio.Semaphore(3)  # Max 3 concurrent pipelines
+_pipeline_lock = None  # Will be initialized in lifespan
 
 
 @asynccontextmanager
@@ -36,6 +36,8 @@ async def lifespan(app: FastAPI):
     print("🛡️  AEGIS SOC — Server ready")
     print(f"   Dashboard: http://localhost:{settings.port}")
     print(f"   API docs:  http://localhost:{settings.port}/docs")
+    global _pipeline_lock
+    _pipeline_lock = asyncio.Semaphore(3)
     yield
     print("🛡️  AEGIS SOC — Shutting down")
 
@@ -214,6 +216,8 @@ async def websocket_endpoint(websocket: WebSocket):
 
 async def _run_pipeline(incident_id: str, alert_payload: dict):
     """Run the full agent pipeline for an incident."""
+    if _pipeline_lock is None:
+        raise RuntimeError("Pipeline lock is not initialized")
     async with _pipeline_lock:
         try:
             soul = settings.load_soul_constraints()

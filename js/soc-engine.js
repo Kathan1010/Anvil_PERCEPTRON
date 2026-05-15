@@ -147,31 +147,40 @@ export async function runPipeline(scenarioBtnKey) {
   setStreamStatus('Connecting...', true);
 
   try {
-    // 1. Trigger Backend
-    const res = await fetch("http://localhost:8000/api/demo/trigger", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ scenario: backendScenario })
-    });
-    const data = await res.json();
-    if (!data.incident_id) {
-      addStreamMsg('system', 'Error triggering pipeline: No incident ID returned', 'error');
-      isRunning = false;
-      return;
-    }
-    const incidentId = data.incident_id;
-
-    // 2. Connect WebSocket
+    // 1. Connect WebSocket FIRST (before triggering pipeline)
     if (currentWs) currentWs.close();
     currentWs = new WebSocket("ws://localhost:8000/ws");
     
     let currentStepEl = null;
     let startTime = Date.now();
+    let incidentId = null;
 
-    currentWs.onopen = () => {
+    currentWs.onopen = async () => {
       setStreamStatus('Processing', true);
-      currentWs.send(JSON.stringify({ type: "subscribe", incident_id: incidentId }));
-      currentStepEl = addTimelineStep('Pipeline Started');
+      addStreamMsg('system', '🔌 Connected to KAVACH backend', 'success');
+      
+      // 2. NOW trigger the backend pipeline
+      try {
+        const res = await fetch("http://localhost:8000/api/demo/trigger", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ scenario: backendScenario })
+        });
+        const data = await res.json();
+        if (!data.incident_id) {
+          addStreamMsg('system', 'Error: No incident ID returned', 'error');
+          isRunning = false;
+          return;
+        }
+        incidentId = data.incident_id;
+        // Subscribe to this incident's updates
+        currentWs.send(JSON.stringify({ type: "subscribe", incident_id: incidentId }));
+        currentStepEl = addTimelineStep('Pipeline Started');
+        addStreamMsg('system', `🚀 Pipeline triggered — Incident ${incidentId.substring(0, 8)}`, 'tool');
+      } catch (err) {
+        addStreamMsg('system', `Failed to trigger pipeline: ${err.message}`, 'error');
+        isRunning = false;
+      }
     };
 
     currentWs.onmessage = async (event) => {
@@ -242,6 +251,27 @@ export async function runPipeline(scenarioBtnKey) {
           completeTimelineStep(currentStepEl);
           const duration = Math.round((Date.now() - startTime) / 1000);
           updateMetrics({ mttr: `${duration}s`, incidents: '1', auto: msg.data.status === 'resolved' ? '100%' : '0%' });
+          addStreamMsg('system', `🛡️ Incident resolved in ${duration}s. All agents standing down.`, 'success');
+          currentWs.close();
+          isRunning = false;
+        }
+      }
+      else if (msg.type === "metric_update") {
+        // Pipeline fully done — update final metrics
+        if (msg.data) {
+          const m = msg.data;
+          updateMetrics({
+            mttr: m.avg_mttr_seconds ? `${Math.round(m.avg_mttr_seconds)}s` : undefined,
+            incidents: m.total_incidents !== undefined ? String(m.total_incidents) : undefined,
+            threat: m.severity_counts && m.severity_counts.critical ? 'HIGH' : 'LOW',
+          });
+        }
+        // Close WS after metrics arrive (pipeline is done)
+        if (isRunning) {
+          setStreamStatus('Complete', false);
+          const duration = Math.round((Date.now() - startTime) / 1000);
+          addStreamMsg('system', `🛡️ Pipeline complete in ${duration}s.`, 'success');
+          if (currentStepEl) completeTimelineStep(currentStepEl);
           currentWs.close();
           isRunning = false;
         }
@@ -249,16 +279,22 @@ export async function runPipeline(scenarioBtnKey) {
     };
     
     currentWs.onerror = () => {
-      addStreamMsg('system', 'WebSocket connection error. Is the backend running?', 'error');
+      addStreamMsg('system', '❌ WebSocket error. Is the backend running on port 8000?', 'error');
+      setStreamStatus('Error', false);
       isRunning = false;
     };
     
     currentWs.onclose = () => {
-      isRunning = false;
+      if (isRunning) {
+        // Unexpected close — don't leave it hanging
+        setStreamStatus('Disconnected', false);
+        isRunning = false;
+      }
     };
 
   } catch (err) {
-    addStreamMsg('system', 'Failed to reach backend API.', 'error');
+    addStreamMsg('system', `Failed to connect: ${err.message}`, 'error');
+    setStreamStatus('Error', false);
     isRunning = false;
   }
 }
