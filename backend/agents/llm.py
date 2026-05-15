@@ -1,25 +1,24 @@
 """
 AEGIS SOC — LLM Helper
-Singleton Gemini client + broadcast helpers for agents.
+Singleton Groq client + broadcast helpers for agents.
 Every agent uses call_llm() for structured LLM interactions.
 """
 
 import json
-from google import genai
-from google.genai import types
+from groq import AsyncGroq
 from backend.config import settings
 from backend.websocket.manager import manager
 from backend.database import log_agent_action
 
-# ── Singleton Gemini Client ──
+# ── Singleton Groq Client ──
 _client = None
 
 
-def get_client() -> genai.Client:
-    """Get or create the singleton Gemini client."""
+def get_client() -> AsyncGroq:
+    """Get or create the singleton Groq client."""
     global _client
     if _client is None:
-        _client = genai.Client(api_key=settings.gemini_api_key)
+        _client = AsyncGroq(api_key=settings.groq_api_key)
     return _client
 
 
@@ -30,24 +29,29 @@ async def call_llm(
     response_mime_type: str = "application/json",
 ) -> str:
     """
-    Call Gemini and return the response text.
+    Call Groq and return the response text.
     Defaults to JSON output for structured responses.
     Set response_mime_type to "text/plain" for free-form text.
     """
     client = get_client()
-    config = types.GenerateContentConfig(
-        temperature=temperature or settings.llm_temperature,
-        response_mime_type=response_mime_type,
-    )
+    
+    messages = []
     if system_instruction:
-        config.system_instruction = system_instruction
+        messages.append({"role": "system", "content": system_instruction})
+    
+    messages.append({"role": "user", "content": prompt})
 
-    response = client.models.generate_content(
-        model=settings.gemini_model,
-        contents=prompt,
-        config=config,
-    )
-    return response.text
+    kwargs = {
+        "model": settings.groq_model,
+        "messages": messages,
+        "temperature": temperature or settings.llm_temperature,
+    }
+
+    if response_mime_type == "application/json":
+        kwargs["response_format"] = {"type": "json_object"}
+
+    response = await client.chat.completions.create(**kwargs)
+    return response.choices[0].message.content
 
 
 async def call_llm_json(

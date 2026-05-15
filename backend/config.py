@@ -13,7 +13,7 @@ class Settings(BaseSettings):
     """Central configuration loaded from .env file."""
 
     # ── API Keys ──
-    gemini_api_key: str = Field(default="", description="Google Gemini API key")
+    groq_api_key: str = Field(default="", description="Groq API key")
     virustotal_api_key: str = Field(default="", description="VirusTotal API v3 key")
     abuseipdb_api_key: str = Field(default="", description="AbuseIPDB API key")
     tavily_api_key: str = Field(default="", description="Tavily search API key")
@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     )
 
     # ── LLM Config ──
-    gemini_model: str = Field(default="gemini-2.0-flash", description="Gemini model name")
+    groq_model: str = Field(default="llama-3.3-70b-versatile", description="Groq model name")
     llm_temperature: float = Field(default=0.1, description="LLM temperature (low = deterministic)")
 
     # ── Confidence Thresholds ──
