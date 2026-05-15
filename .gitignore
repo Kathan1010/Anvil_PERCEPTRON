@@ -1,0 +1,53 @@
+# ── Secrets ──
+.env
+
+# ── Python ──
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+*.egg-info/
+*.egg
+dist/
+build/
+.eggs/
+*.whl
+
+# ── Database ──
+*.db
+*.sqlite
+*.sqlite3
+
+# ── Generated reports ──
+reports/*.pdf
+reports/*.txt
+
+# ── Node/Frontend ──
+node_modules/
+.vite/
+.next/
+.turbo/
+
+# ── IDE / Editor ──
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# ── Testing ──
+.pytest_cache/
+htmlcov/
+.coverage
+test_e2e.py
+
+# ── Personal notes (not project code) ──
+aegis_soc_context.txt
+implementaion_plan.txt
+
+# ── Misc ──
+*.log
+.gemini/
+.kiro/
