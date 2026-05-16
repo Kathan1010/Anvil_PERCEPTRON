@@ -74,8 +74,9 @@ async def _generate_report(state: SOCState) -> str:
     evidence = state.get("evidence", [])
     actions = state.get("actions_taken", [])
 
-    report = await call_llm_text(
-        prompt=f"""Generate a professional SOC incident report with these sections:
+    try:
+        report = await call_llm_text(
+            prompt=f"""Generate a professional SOC incident report with these sections:
 
 1. EXECUTIVE SUMMARY (2-3 sentences)
 2. ALERT DETAILS (type, severity, source, timestamp)
@@ -99,6 +100,8 @@ Incident Data:
 - Prior IOC Sightings: {len(state.get('ioc_correlations', []))}
 
 Format as clean markdown with headers, tables where appropriate.""",
-        system_instruction="You are a senior SOC analyst writing a formal incident report. Be precise, factual, and professional."
-    )
+            system_instruction="You are a senior SOC analyst writing a formal incident report. Be precise, factual, and professional."
+        )
+    except Exception as e:
+        report = f"# Incident Report\n\n**Warning**: Detailed report generation failed due to LLM error or rate limit.\n\n**Details**:\n- Incident ID: {state.get('incident_id', 'unknown')}\n- Type: {state.get('alert_type', 'unknown')}\n- Severity: {state.get('severity', 'unknown')}\n- Decision: {state.get('decision', 'unknown')}\n\n*Error: {str(e)}*"
     return report
