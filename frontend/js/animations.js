@@ -28,20 +28,6 @@ export function initAnimations(lenis) {
       { yPercent: 0, opacity: 1, stagger: 0.03, duration: 1.2, ease: 'power4.out' });
   }
 
-  // ===== PRELOADER SEQUENCE =====
-  const loaderEl = document.getElementById('KAVACH-loader');
-  const pctEl = document.getElementById('loader-pct');
-  const barEl = document.getElementById('loader-bar');
-  const statusEl = document.querySelector('.loader-status');
-  
-  const statuses = [
-    "CONNECTING TO NEURAL SOC...",
-    "BYPASSING FIREWALLS...",
-    "DECRYPTING THREAT FEEDS...",
-    "INITIALIZING AUTONOMOUS AGENTS...",
-    "KAVACH GATE OPEN."
-  ];
-
   // ===== HERO ENTRANCE SEQUENCE =====
   const heroTL = gsap.timeline({ paused: true, defaults: { ease: 'power3.out' } });
   heroTL
@@ -58,26 +44,36 @@ export function initAnimations(lenis) {
     .fromTo('.three-container', { opacity: 0 },
       { opacity: 0.5, duration: 2 }, '-=1.5');
 
-  if (loaderEl) {
-    let progress = { val: 0 };
-    gsap.to(progress, {
-      val: 100,
-      duration: 2.8,
-      ease: 'power2.inOut',
-      onUpdate: () => {
-        if(pctEl) pctEl.innerText = progress.val.toFixed(2) + '%';
-        if(barEl) barEl.style.width = progress.val + '%';
+  // ===== LOGIN OVERLAY TO HERO ENTRANCE =====
+  const loginOverlay = document.getElementById('login-overlay');
+  const loginForm = document.getElementById('soc-login-form');
+  
+  if (loginOverlay && loginForm) {
+    loginForm.addEventListener('submit', (e) => {
+      e.preventDefault();
+      
+      const btnText = loginForm.querySelector('.btn-login-text');
+      const btnIcon = loginForm.querySelector('.btn-login-icon');
+      
+      // Simulating authentication delay
+      if (btnText) btnText.textContent = 'AUTHENTICATING...';
+      if (btnIcon) btnIcon.setAttribute('data-lucide', 'loader');
+      lucide.createIcons();
+      
+      setTimeout(() => {
+        if (btnText) btnText.textContent = 'ACCESS GRANTED';
+        if (btnIcon) btnIcon.setAttribute('data-lucide', 'check');
+        lucide.createIcons();
+        loginForm.querySelector('.btn-login').style.background = 'var(--color-neon-green)';
         
-        const idx = Math.min(Math.floor((progress.val / 100) * statuses.length), statuses.length - 1);
-        if(statusEl) statusEl.innerText = statuses[idx];
-      },
-      onComplete: () => {
-        loaderEl.classList.add('gate-open');
         setTimeout(() => {
-          heroTL.play();
-        }, 400);
-        setTimeout(() => loaderEl.style.display = 'none', 1000);
-      }
+          loginOverlay.classList.add('gate-open');
+          setTimeout(() => {
+            heroTL.play();
+            loginOverlay.style.display = 'none';
+          }, 800);
+        }, 600);
+      }, 1500);
     });
   } else {
     heroTL.play();
