@@ -17,6 +17,7 @@ async def check_ip(ip: str, max_age_days: int = 90) -> dict:
     headers = {
         "Key": settings.abuseipdb_api_key,
         "Accept": "application/json",
+        "Accept-Encoding": "gzip, deflate"
     }
     params = {
         "ipAddress": ip,

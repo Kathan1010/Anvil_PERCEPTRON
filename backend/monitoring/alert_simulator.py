@@ -23,7 +23,7 @@ DEMO_SCENARIOS = {
         "severity_hint": "high",
         "primary_ioc": "45.33.32.156",
         "ioc_type": "ip",
-        "source_ip": "45.33.32.156",
+        "source_ip": "8.8.8.8",
         "destination_ip": "10.0.1.45",
         "destination_port": 22,
         "attempt_count": 847,
