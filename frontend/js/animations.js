@@ -69,8 +69,9 @@ export function initAnimations(lenis) {
         setTimeout(() => {
           loginOverlay.classList.add('gate-open');
           setTimeout(() => {
-            heroTL.play();
             loginOverlay.style.display = 'none';
+            ScrollTrigger.refresh(); // Crucial to recalculate scroll positions after layout change
+            heroTL.play();
           }, 800);
         }, 600);
       }, 1500);
@@ -135,12 +136,14 @@ export function initAnimations(lenis) {
     });
 
     // Animate cards inside track on enter
-    gsap.from('.horizontal-card', {
-      y: 50, opacity: 0, stagger: 0.1, duration: 1, ease: 'power3.out',
-      scrollTrigger: {
-        trigger: horizontalSection, start: 'top 60%', once: true
+    gsap.fromTo('.horizontal-card', 
+      { y: 50, opacity: 0 },
+      { y: 0, opacity: 1, stagger: 0.1, duration: 1, ease: 'power3.out',
+        scrollTrigger: {
+          trigger: horizontalSection, start: 'top 60%', once: true
+        }
       }
-    });
+    );
   }
 
   // ===== COLOR PALETTE SHIFTS =====
