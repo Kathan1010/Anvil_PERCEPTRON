@@ -22,7 +22,24 @@
       <div class="login-container glass-card">
         <div class="login-header">
           <div class="login-logo-wrap">
-            <i data-lucide="shield-check" style="width: 50px; height: 50px; color: #3b82f6;"></i>
+            <svg class="KAVACH-logo-svg" width="60" height="60" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <defs>
+                <radialGradient id="flare-login-new" cx="50%" cy="50%" r="50%">
+                  <stop offset="0%" stop-color="var(--color-accent)" stop-opacity="0.8" />
+                  <stop offset="100%" stop-color="var(--color-neon-cyan)" stop-opacity="0" />
+                </radialGradient>
+                <filter id="glow-login-new" x="-20%" y="-20%" width="140%" height="140%">
+                  <feGaussianBlur stdDeviation="3" result="blur" />
+                  <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                </filter>
+              </defs>
+              <circle cx="50" cy="50" r="40" fill="url(#flare-login-new)" />
+              <path d="M50 10L90 30V60C90 80 50 95 50 95C50 95 10 80 10 60V30L50 10Z" fill="rgba(10,10,15,0.8)" stroke="var(--color-neon-cyan)" stroke-width="4" filter="url(#glow-login-new)"/>
+              <path d="M50 20L80 35V58C80 72 50 85 50 85C50 85 20 72 20 58V35L50 20Z" fill="transparent" stroke="var(--color-accent)" stroke-width="3" stroke-dasharray="4 4"/>
+              <path d="M50 30V75" stroke="#fff" stroke-width="3" stroke-linecap="round"/>
+              <circle cx="50" cy="50" r="8" fill="#fff" filter="url(#glow-login-new)"/>
+              <circle cx="50" cy="50" r="4" fill="var(--color-neon-cyan)" />
+            </svg>
           </div>
           <h1 class="login-title">KAVACH SOC</h1>
           <p class="login-subtitle">AUTHORIZED PERSONNEL ONLY</p>
