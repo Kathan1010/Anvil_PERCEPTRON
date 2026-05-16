@@ -18,7 +18,11 @@ def get_client() -> AsyncGroq:
     """Get or create the singleton Groq client."""
     global _client
     if _client is None:
-        _client = AsyncGroq(api_key=settings.groq_api_key)
+        _client = AsyncGroq(
+            api_key=settings.groq_api_key,
+            timeout=10.0,
+            max_retries=1
+        )
     return _client
 
 

@@ -32,8 +32,9 @@ async def decision_node(state: SOCState) -> SOCState:
     await broadcast_agent(incident_id, "decision", "⚖️ Decision Agent activated — evaluating response...")
 
     # ── Step 1: LLM recommends actions ──
-    llm_decision = await call_llm_json(
-        prompt=f"""Based on this security incident, recommend response actions:
+    try:
+        llm_decision = await call_llm_json(
+            prompt=f"""Based on this security incident, recommend response actions:
 
 Alert Type: {state.get('alert_type', 'unknown')}
 Severity: {severity}
@@ -50,8 +51,14 @@ Respond with JSON:
     "recommended_actions": ["action1", "action2"],
     "reasoning": "Why these actions are appropriate"
 }}""",
-        system_instruction="You are a SOC decision-maker. Recommend proportional response actions. Always include slack_alert. For high-confidence threats, include block_ip. For critical, add escalate."
-    )
+            system_instruction="You are a SOC decision-maker. Recommend proportional response actions. Always include slack_alert. For high-confidence threats, include block_ip. For critical, add escalate."
+        )
+    except Exception as e:
+        await broadcast_agent(incident_id, "decision", f"⚠️ LLM Error: {str(e)[:100]}... defaulting to safe actions.")
+        llm_decision = {
+            "recommended_actions": ["slack_alert", "escalate"],
+            "reasoning": "Defaulting to safe actions due to LLM error or timeout."
+        }
 
     recommended = llm_decision.get("recommended_actions", ["slack_alert"])
     reasoning = llm_decision.get("reasoning", "")

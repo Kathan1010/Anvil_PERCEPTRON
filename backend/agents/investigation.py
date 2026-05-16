@@ -99,8 +99,9 @@ async def investigation_node(state: SOCState) -> SOCState:
     # ── Step 4: LLM synthesis — attack chain + evidence ──
     evidence_list = _build_evidence_list(state, all_correlations)
 
-    llm_analysis = await call_llm_json(
-        prompt=f"""Analyze this security incident and provide your assessment:
+    try:
+        llm_analysis = await call_llm_json(
+            prompt=f"""Analyze this security incident and provide your assessment:
 
 Alert Type: {state.get('alert_type', 'unknown')}
 Severity: {state.get('severity', 'unknown')}
@@ -118,8 +119,15 @@ Respond with JSON:
         {{"step": 1, "analysis": "...", "conclusion": "..."}}
     ]
 }}""",
-        system_instruction="You are an expert SOC analyst. Provide attack chain analysis. confidence_adjustment should be between -0.1 and +0.1 to fine-tune the deterministic score."
-    )
+            system_instruction="You are an expert SOC analyst. Provide attack chain analysis. confidence_adjustment should be between -0.1 and +0.1 to fine-tune the deterministic score."
+        )
+    except Exception as e:
+        await broadcast_agent(incident_id, "investigation", f"⚠️ LLM Error: {str(e)[:100]}... falling back to deterministic score.")
+        llm_analysis = {
+            "attack_chain": "Unable to generate attack chain due to LLM error.",
+            "confidence_adjustment": 0.0,
+            "reasoning_steps": [{"step": 1, "analysis": "Error reaching LLM", "conclusion": "Relying purely on deterministic score."}]
+        }
 
     attack_chain = llm_analysis.get("attack_chain", "Unable to determine attack chain")
     adjustment = max(-0.1, min(0.1, llm_analysis.get("confidence_adjustment", 0)))

@@ -128,8 +128,9 @@ async def triage_node(state: SOCState) -> SOCState:
     sanitized_title = sanitize_for_prompt(alert.get("title", "Unknown alert"))
     sanitized_desc = sanitize_for_prompt(alert.get("description", "No description"))
 
-    classification = await call_llm_json(
-        prompt=f"""Classify this security alert:
+    try:
+        classification = await call_llm_json(
+            prompt=f"""Classify this security alert:
 
 Title: {sanitized_title}
 Description: {sanitized_desc}
@@ -144,8 +145,16 @@ Respond with JSON:
     "urgency": "immediate|soon|routine",
     "reasoning": "one sentence explaining the classification"
 }}""",
-        system_instruction="You are a SOC Tier-1 analyst. Classify security alerts accurately based on the IOCs and context provided. Be conservative — when in doubt, classify higher severity."
-    )
+            system_instruction="You are a SOC Tier-1 analyst. Classify security alerts accurately based on the IOCs and context provided. Be conservative — when in doubt, classify higher severity."
+        )
+    except Exception as e:
+        await broadcast_agent(incident_id, "triage", f"⚠️ LLM Error: {str(e)[:100]}... falling back to default classification.")
+        classification = {
+            "severity": "high",
+            "alert_type": alert.get("alert_type", "unknown"),
+            "urgency": "immediate",
+            "reasoning": "Fallback classification due to LLM timeout or error."
+        }
 
     severity = classification.get("severity", "medium")
     alert_type = classification.get("alert_type", alert.get("alert_type", "unknown"))
