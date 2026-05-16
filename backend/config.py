@@ -18,6 +18,7 @@ class Settings(BaseSettings):
     abuseipdb_api_key: str = Field(default="", description="AbuseIPDB API key")
     tavily_api_key: str = Field(default="", description="Tavily search API key")
     slack_webhook_url: str = Field(default="", description="Slack Incoming Webhook URL")
+    omium_api_key: str = Field(default="", description="Omium AI observability API key")
 
     # ── Server Config ──
     host: str = Field(default="0.0.0.0", description="Server bind address")

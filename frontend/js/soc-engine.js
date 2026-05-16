@@ -137,7 +137,51 @@ function showApproval(reason) {
 }
 
 // ===== MAIN PIPELINE =====
+let trafficTimer = null;
+
+function runTrafficSimulator() {
+  if (isRunning) return;
+  isRunning = true;
+  resetUI();
+  setStreamStatus('Live Traffic', true);
+  
+  const stream = document.getElementById('agent-stream');
+  let trafficCount = 0;
+  
+  const IPS = ["192.168.1.10", "10.0.0.45", "172.16.2.200", "8.8.8.8", "192.168.1.104", "10.20.5.15"];
+  const PATHS = ["/api/v1/auth", "/home", "/dashboard", "/login", "/static/style.css", "/api/v1/users"];
+  
+  if (trafficTimer) clearInterval(trafficTimer);
+  
+  trafficTimer = setInterval(() => {
+    trafficCount++;
+    const ip = IPS[Math.floor(Math.random() * IPS.length)];
+    const path = PATHS[Math.floor(Math.random() * PATHS.length)];
+    const status = Math.random() > 0.9 ? "404 Not Found" : "200 OK";
+    
+    const div = document.createElement('div');
+    div.className = `stream-msg system`;
+    div.innerHTML = `<span style="color:var(--color-text-dim); font-size:12px;">[LOG] ${now()} | ${ip} | GET ${path} | ${status}</span>`;
+    stream.appendChild(div);
+    stream.scrollTop = stream.scrollHeight;
+    
+    // Inject a malicious event after ~5 seconds
+    if (trafficCount === 15) {
+      clearInterval(trafficTimer);
+      addStreamMsg('system', '🚨 ANOMALY DETECTED IN TRAFFIC STREAM. KAVACH PIPELINE ENGAGED.', 'error');
+      setTimeout(() => {
+        isRunning = false;
+        runPipeline('malware');
+      }, 1500);
+    }
+  }, 300);
+}
+
 export async function runPipeline(scenarioBtnKey) {
+  if (scenarioBtnKey === 'traffic_stream') {
+    runTrafficSimulator();
+    return;
+  }
   if (isRunning) return;
   isRunning = true;
   resetUI();
@@ -321,6 +365,7 @@ export function resetUI() {
 
   setStreamStatus('Idle', false);
   updateMetrics({ mttr: '—', incidents: '0', threat: 'LOW', auto: '0%' });
+  if (trafficTimer) clearInterval(trafficTimer);
 }
 
 export function initPreviewStream() {

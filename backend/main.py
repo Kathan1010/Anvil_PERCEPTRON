@@ -29,10 +29,19 @@ _pending_approvals: dict[str, SOCState] = {}
 _pipeline_lock = None  # Will be initialized in lifespan
 
 
+import omium
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Startup/shutdown lifecycle."""
     await init_db()
+    
+    # Initialize Omium AI observability
+    if settings.omium_api_key:
+        omium.init(api_key=settings.omium_api_key)
+        omium.instrument_langgraph()
+        print("🔍 Omium AI observability active")
+        
     print("🛡️  AEGIS SOC — Server ready")
     print(f"   Dashboard: http://localhost:{settings.port}")
     print(f"   API docs:  http://localhost:{settings.port}/docs")
