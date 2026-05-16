@@ -48,8 +48,9 @@ async def map_to_mitre(enrichment_summary: str, alert_type: str) -> list[dict]:
     techniques = _load_techniques()
     technique_list = json.dumps([{"id": t["id"], "name": t["name"], "tactic": t["tactic"]} for t in techniques])
 
-    result = await call_llm_json(
-        prompt=f"""Map these security findings to MITRE ATT&CK techniques.
+    try:
+        result = await call_llm_json(
+            prompt=f"""Map these security findings to MITRE ATT&CK techniques.
 
 Alert Type: {alert_type}
 Findings: {enrichment_summary[:1000]}
@@ -61,8 +62,10 @@ Return JSON array of matched techniques with confidence:
 [{{"id": "T1566.001", "name": "Spearphishing Attachment", "tactic": "Initial Access", "confidence": 0.9}}]
 
 Only include techniques with confidence >= 0.5. Max 5 techniques.""",
-        system_instruction="You are a MITRE ATT&CK mapping expert. Map observed indicators to the most relevant techniques."
-    )
-    if isinstance(result, list):
-        return result[:5]
+            system_instruction="You are a MITRE ATT&CK mapping expert. Map observed indicators to the most relevant techniques."
+        )
+        if isinstance(result, list):
+            return result[:5]
+    except Exception as e:
+        print(f"MITRE Mapper LLM Error: {e}")
     return []
